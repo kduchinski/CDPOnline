@@ -1,6 +1,6 @@
 #CDP_WebGestalt_Watir_Script.rb
 #Created by: Hassam Solano-Morel, Paul Anderson
-#
+#Updated 3.20.2017 by Katherine Duchinski
 
 
 require 'watir-webdriver'
@@ -20,54 +20,63 @@ ENTREZ_IDS = userData['entrezIDs']
 
 headless = Headless.new
 headless.start
-b = Watir::Browser.start 'http://bioinfo.vanderbilt.edu/webgestalt/login.php'
-
-puts b.title#*
-
-b.text_field(:name => 'j_username').set 'hassam303@gmail.com'
-b.button(:name => 'submit').click
+b = Watir::Browser.start 'http://www.webgestalt.org/option.php'
 
 puts b.title#*
 
 #Paste in entrez ids 
 b.select_list(:name => 'organism').select 'hsapiens'
 # Options
+#<option>athaliana</option>
+#<option>btaurus</option>
+#<option>celegans</option>
+#<option>cfamiliaris</option>
+#<option>dmelanogaster</option>	
+#<option>drerio</option>
+#<option>ggallus</option>
 #<option>hsapiens</option>
 #<option>mmusculus</option>
 #<option>rnorvegicus</option>
-#<option>drerio</option>
-#<option>celegans</option>	
 #<option>scerevisiae</option>
-#<option>cfamiliaris</option>
-#<option>dmelanogaster</option>
-sleep(2)
-b.select_list(:name => 'idtype').select 'hsapiens__entrezgene'
-b.textarea(:name => 'pastefile').set ENTREZ_IDS.join("\n")
-b.button(:index => 1).click
-
-puts b.title#*
+#<option>sscrofa</option>
+#<option>others</option>
+b.select_list(:name => 'method').select 'Overrepresentation Enrichment Analysis (ORA)'
+# Options
+#<option>Overrepresentation Enrichment Analyis (ORA)</option>
+#<option>Gene Set Enrichment Analyis (GSEA)</option>
+#<option>Network Topology-Based Analyis (NTA)</option>
 
 enrichment = userData['enrichmentType']
 
 case enrichment 
 when "KEGG"
-	enrichment = "KEGG Analysis"
+	type = 'pathway'
+	enrichment = 'KEGG'
 when "TF"
-	enrichment = "Transcription Factor Target Analysis"
+	type = 'network'
+	enrichment = 'Transcription_Factor_target'
 when "WIKI"
-	enrichment = "Wikipathways Analysis"
+	type = 'pathway'
+	enrichment = 'Wikipathway'
 
 end 
 
-#Selecting Enrichment Options
-b.element(:id => "one-ddheader").hover
-sleep(2)
-b.link(:text => enrichment).click #"JSON:enrichmentType"
-b.select_list(:name => "refset").select "hsapiens__entrezgene_protein-coding"#"JSON:refSet"
-b.select_list(:name => "cutoff").select userData['cutoff']#"JSON:sigLevel"
-b.select_list(:name => "min").select userData['minGenes'] #Minimum Number of genes in category
+b.select_list(:name => 'databaseClass').select type
+b.select_list(:name => 'databaseName').select enrichment
 
-b.button(:value => "Run Enrichment Analysis").click
+sleep(2)
+b.select_list(:name => 'idtype').select 'entrezgene'
+b.textarea(:name => 'pastefile').set ENTREZ_IDS.join("\n")
+
+puts b.title#*
+
+b.select_list(:name => "refset").select "genome_protein-coding"#"JSON:refSet"
+b.button(:value => "Advanced Parameters").click
+b.textarea(:name => "min").set userData['minGenes'] #Minimum Number of genes in category
+b.radio(:value => 'FDR').set
+b.textarea(:name => "cutoff").set userData['cutoff']#"JSON:sigLevel"
+
+b.button(:value => "Submit").click
 
 
 b.windows.last.use #Previous action opens a new window
